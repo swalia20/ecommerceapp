@@ -1,2 +1,2 @@
 # ecommerceapp
-An ecommerce app Built with Angular JS
+An ecommerce app Built with Angular JS, MongoDb
