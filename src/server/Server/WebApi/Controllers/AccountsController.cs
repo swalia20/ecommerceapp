@@ -11,12 +11,14 @@ namespace WebApi.Controllers
     [RoutePrefix("api/accounts")]
     public class AccountsController : BaseApiController
     {
+        [Authorize(Roles = "Admin")]
         [Route("users")]
         public IHttpActionResult GetUsers()
         {
             return Ok(AppUserManager.Users.ToList().Select(u => TheModelFactory.Create(u)));
         }
 
+        [Authorize(Roles = "Admin")]
         [Route("user/{id:guid}", Name = "GetUserById")]
         public async Task<IHttpActionResult> GetUser(string id)
         {
@@ -30,6 +32,7 @@ namespace WebApi.Controllers
             return NotFound();
         }
 
+        [Authorize(Roles = "Admin")]
         [Route("user/{username}")]
         public async Task<IHttpActionResult> GetUserByName(string username)
         {
@@ -43,6 +46,7 @@ namespace WebApi.Controllers
             return NotFound();
         }
 
+        [AllowAnonymous]
         [Route("create")]
         public async Task<IHttpActionResult> CreateUser(CreateUserBindingModel createUserModel)
         {
@@ -79,6 +83,7 @@ namespace WebApi.Controllers
             return Created(locationHeader, TheModelFactory.Create(user));
         }
 
+        [AllowAnonymous]
         [HttpGet]
         [Route("ConfirmEmail", Name = "ConfirmEmailRoute")]
         public async Task<IHttpActionResult> ConfirmEmail(string userId = "", string code = "")
@@ -94,6 +99,7 @@ namespace WebApi.Controllers
             return result.Succeeded ? Ok() : GetErrorResult(result);
         }
 
+        [Authorize]
         [Route("ChangePassword")]
         public async Task<IHttpActionResult> ChangePassword(ChangePasswordBindingModel model)
         {
@@ -112,6 +118,7 @@ namespace WebApi.Controllers
             return Ok();
         }
 
+        [Authorize(Roles = "Admin")]
         [Route("user/{id:guid}")]
         public async Task<IHttpActionResult> DeleteUser(string id)
         {
@@ -128,6 +135,48 @@ namespace WebApi.Controllers
             }
 
             return NotFound();
+        }
+
+        [Authorize(Roles = "Admin")]
+        [Route("user/{id:guid}/roles")]
+        [HttpPut]
+        public async Task<IHttpActionResult> AssignRolesToUser([FromUri] string id, [FromBody] string[] rolesToAssign)
+        {
+
+            var appUser = await AppUserManager.FindByIdAsync(id);
+
+            if (appUser == null)
+            {
+                return NotFound();
+            }
+
+            var currentRoles = await AppUserManager.GetRolesAsync(appUser.Id);
+
+            var rolesNotExists = rolesToAssign.Except(AppRoleManager.Roles.Select(r => r.Name)).ToArray();
+
+            if (rolesNotExists.Any())
+            {
+                ModelState.AddModelError("", string.Format("Roles '{0}' does not exixts in the system", string.Join(",", rolesNotExists)));
+                return BadRequest(ModelState);
+            }
+
+            var removeResult = await AppUserManager.RemoveFromRolesAsync(appUser.Id, currentRoles.ToArray());
+
+            if (!removeResult.Succeeded)
+            {
+                ModelState.AddModelError("", "Failed to remove user roles");
+                return BadRequest(ModelState);
+            }
+
+            var addResult = await AppUserManager.AddToRolesAsync(appUser.Id, rolesToAssign);
+
+            if (!addResult.Succeeded)
+            {
+                ModelState.AddModelError("", "Failed to add user roles");
+                return BadRequest(ModelState);
+            }
+
+            return Ok();
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System.Net.Http;
 using System.Web.Http.Routing;
+using Microsoft.AspNet.Identity.EntityFramework;
 using WebApi.Infrastructure;
 
 namespace WebApi.Models
@@ -31,5 +32,23 @@ namespace WebApi.Models
                 Claims = _appUserManager.GetClaimsAsync(appUser.Id).Result
             };
         }
+
+        public RoleReturnModel Create(IdentityRole appRole)
+        {
+
+            return new RoleReturnModel
+            {
+                Url = _urlHelper.Link("GetRoleById", new { id = appRole.Id }),
+                Id = appRole.Id,
+                Name = appRole.Name
+            };
+        }
+    }
+
+    public class RoleReturnModel
+    {
+        public string Url { get; set; }
+        public string Id { get; set; }
+        public string Name { get; set; }
     }
 }

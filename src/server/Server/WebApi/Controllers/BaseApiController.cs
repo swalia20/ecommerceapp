@@ -11,12 +11,21 @@ namespace WebApi.Controllers
     {
         ModelFactory _modelFactory;
         readonly ApplicationUserManager _appUserManager = null;
+        readonly ApplicationRoleManager _appRoleManager = null;
 
         protected ApplicationUserManager AppUserManager
         {
             get
             {
                 return _appUserManager ?? Request.GetOwinContext().GetUserManager<ApplicationUserManager>();
+            }
+        }
+
+        protected ApplicationRoleManager AppRoleManager
+        {
+            get
+            {
+                return _appRoleManager ?? Request.GetOwinContext().GetUserManager<ApplicationRoleManager>();
             }
         }
 

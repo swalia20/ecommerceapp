@@ -1,3 +1,4 @@
+using System.Linq;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
 using WebApi.Infrastructure;
@@ -17,8 +18,8 @@ namespace WebApi.Migrations
         protected override void Seed(ApplicationDbContext context)
         {
             //  This method will be called after migrating to the latest version.
-
             var manager = new UserManager<ApplicationUser>(new UserStore<ApplicationUser>(new ApplicationDbContext()));
+            var roleManager = new RoleManager<IdentityRole>(new RoleStore<IdentityRole>(new ApplicationDbContext()));
 
             var user = new ApplicationUser
             {
@@ -32,6 +33,17 @@ namespace WebApi.Migrations
             };
 
             manager.Create(user, "MySuperP@ssword!");
+
+            if (!roleManager.Roles.Any())
+            {
+                roleManager.Create(new IdentityRole { Name = "SuperAdmin" });
+                roleManager.Create(new IdentityRole { Name = "Admin" });
+                roleManager.Create(new IdentityRole { Name = "User" });
+            }
+
+            var adminUser = manager.FindByName("SuperPowerUser");
+
+            manager.AddToRoles(adminUser.Id, "SuperAdmin", "Admin");
         }
     }
 }
